@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   strapi:
+    build: .
     image: custom-strapi-app:latest # Substitua pela sua imagem Docker
     container_name: strapi_app
     restart: unless-stopped
