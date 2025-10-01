@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  strapi:
+    image: custom-strapi-app:latest # Substitua pela sua imagem Docker
+    container_name: strapi_app
+    restart: unless-stopped
+    ports:
+      - "1337:1337" # Mapeia a porta 1337 da EC2 para a 1337 do contêiner
+    volumes:
+      - ./app:/opt/app # Persiste os arquivos do Strapi
+    environment:
+      # Variáveis de ambiente que o Strapi precisa para conectar ao DB
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: ${DB_USER:-strapi}
+      DATABASE_PASSWORD: ${DB_PASS:-strapi}
+    depends_on:
+      - db
+
+  db:
+    image: postgres:14-alpine
+    container_name: postgres_db
+    restart: unless-stopped
+    volumes:
+      - strapi-data:/var/lib/postgresql/data # Volume PERSISTENTE para os dados
+    environment:
+      POSTGRES_USER: ${DB_USER:-strapi}
+      POSTGRES_PASSWORD: ${DB_PASS:-strapi}
+      POSTGRES_DB: strapi
+    healthcheck: # Garante que o Strapi só inicia depois que o DB estiver pronto
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  strapi-data:
